@@ -11,8 +11,7 @@
   },
   "scripts": {
     "test": "node test/run.js",
-    "build:deep-bundle": "node scripts/build-deep-bundle.js",
-    "prepare:deep-release": "node scripts/prepare-deep-release.js"
+    "build:deep-bundle": "node scripts/build-deep-bundle.js"
   },
   "files": [
     "bin/",
@@ -20,12 +19,6 @@
     "scripts/build-deep-bundle.js",
     "src/"
   ],
-  "cszone38": {
-    "deepCompanionPackages": {
-      "linux-x64": "cszone38-deep-linux-x64"
-    },
-    "deepCompanionVersion": "0.1.0"
-  },
   "keywords": [],
   "author": "",
   "license": "BUSL-1.1",

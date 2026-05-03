@@ -199,6 +199,13 @@ npx cszone38 . --threshold=A:40,C:30
 
 Current public deep-bundle release support is **Linux x64 only**. macOS and Windows bundles are planned later.
 
+To enable deep mode on Linux x64:
+
+1. Download `cszone38-deep-linux-x64.tar.gz` from the matching GitHub Release.
+2. Extract the archive.
+3. Run `cszone38 setup deep --bundle=/path/to/cszone38-deep-linux-x64`.
+4. Run `cszone38 doctor` and then `cszone38 . --deep`.
+
 **Windows via WSL2** — If you are on Windows, you can still use `--deep` through WSL2 by running `cszone38` inside a Linux distro such as Ubuntu. This is Linux support inside WSL, not native Windows deep support.
 
 In an elevated PowerShell window:
@@ -212,7 +219,7 @@ After restart, open Ubuntu and run:
 ```bash
 npm install -g cszone38
 cszone38 doctor
-cszone38 setup deep
+cszone38 setup deep --bundle=/path/to/cszone38-deep-linux-x64
 cszone38 . --deep
 ```
 
@@ -261,8 +268,8 @@ npx cszone38 . --fix --verbose
 
 **Enable the optional deep pass:**
 ```bash
+cszone38 setup deep --bundle=/path/to/cszone38-deep-linux-x64
 cszone38 doctor
-cszone38 setup deep
 cszone38 . --deep
 ```
 

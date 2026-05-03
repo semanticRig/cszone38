@@ -3,13 +3,10 @@
 var fs = require('fs');
 var os = require('os');
 var path = require('path');
-var PackageInfo = require('../package.json');
 
 var ENGINE = 'security-code-scan';
 var SCHEMA_VERSION = 1;
-var SETUP_HINT = 'install the matching cszone38-deep-* companion package or run: cszone38 setup deep --bundle=/path/to/deep-bundle';
-var COMPANION_BUNDLE_DIR = 'bundle';
-var COMPANION_RESOLVE_FROM_ENV = 'CSZONE38_DEEP_PACKAGE_RESOLVE_FROM';
+var SETUP_HINT = 'download the deep bundle from GitHub Releases, extract it, and run: cszone38 setup deep --bundle=/path/to/cszone38-deep-linux-x64';
 
 function _platformTag(opts) {
   return opts && opts.platformTag ? opts.platformTag : process.platform + '-' + process.arch;
@@ -54,75 +51,6 @@ function _resolvePath(baseDir, value) {
 
 function _exists(targetPath) {
   return !!targetPath && fs.existsSync(targetPath);
-}
-
-function _deepPackageConfig() {
-  return PackageInfo && PackageInfo.cszone38 ? PackageInfo.cszone38 : {};
-}
-
-function _companionPackageName(opts) {
-  var config = _deepPackageConfig();
-  var packages = config.deepCompanionPackages || {};
-
-  return packages[_platformTag(opts)] || null;
-}
-
-function _resolvePackageJsonPath(packageName, opts) {
-  var resolveFrom = opts && opts.resolveFrom ? opts.resolveFrom : process.env[COMPANION_RESOLVE_FROM_ENV];
-  var resolveOptions;
-
-  try {
-    if (resolveFrom) {
-      resolveOptions = { paths: [path.resolve(resolveFrom)] };
-      return require.resolve(packageName + '/package.json', resolveOptions);
-    }
-
-    return require.resolve(packageName + '/package.json');
-  } catch (_err) {
-    return null;
-  }
-}
-
-function _resolveCompanionBundle(opts) {
-  var platformTag = _platformTag(opts);
-  var packageName = _companionPackageName(opts);
-  var packageJsonPath;
-  var packageRoot;
-  var bundleRoot;
-
-  if (!packageName) {
-    return {
-      ok: false,
-      reason: 'no deep companion package is configured for ' + platformTag + ' — ' + SETUP_HINT,
-      packageName: null,
-    };
-  }
-
-  packageJsonPath = _resolvePackageJsonPath(packageName, opts);
-  if (!packageJsonPath) {
-    return {
-      ok: false,
-      reason: 'deep companion package `' + packageName + '` is not installed — ' + SETUP_HINT,
-      packageName: packageName,
-    };
-  }
-
-  packageRoot = path.dirname(packageJsonPath);
-  bundleRoot = path.join(packageRoot, COMPANION_BUNDLE_DIR);
-  if (!fs.existsSync(bundleRoot) || !fs.statSync(bundleRoot).isDirectory()) {
-    return {
-      ok: false,
-      reason: 'deep companion package `' + packageName + '` is missing its bundled toolchain payload',
-      packageName: packageName,
-    };
-  }
-
-  return {
-    ok: true,
-    packageName: packageName,
-    packageRoot: packageRoot,
-    bundleRoot: bundleRoot,
-  };
 }
 
 function _validateManifest(manifest, manifestDir) {
@@ -285,25 +213,6 @@ function installBundle(bundlePath, opts) {
   });
 }
 
-function seedFromCompanionPackage(opts) {
-  var companion = _resolveCompanionBundle(opts);
-
-  if (!companion.ok) {
-    return {
-      ok: false,
-      reason: companion.reason,
-      packageName: companion.packageName || null,
-    };
-  }
-
-  return _installIntoStore(companion.bundleRoot, {
-    storeRoot: opts && opts.storeRoot,
-    platformTag: opts && opts.platformTag,
-    installSource: 'package',
-    packageName: companion.packageName,
-  });
-}
-
 function doctor(opts) {
   var deep = resolveToolchain(opts);
 
@@ -335,7 +244,6 @@ module.exports = {
   SETUP_HINT: SETUP_HINT,
   resolveToolchain: resolveToolchain,
   installBundle: installBundle,
-  seedFromCompanionPackage: seedFromCompanionPackage,
   doctor: doctor,
   _defaultStoreRoot: _defaultStoreRoot,
   _toolchainRoot: _toolchainRoot,

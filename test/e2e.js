@@ -74,41 +74,6 @@ function makeFixFixtureDir() {
 	return dir;
 }
 
-function makeDeepCompanionPackageDir() {
-	var root = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-companion-'));
-	var pkg = require('../package.json');
-	var packageName = pkg.cszone38.deepCompanionPackages[process.platform + '-' + process.arch];
-	var packageRoot = path.join(root, 'node_modules', packageName);
-	var bundleRoot = path.join(packageRoot, 'bundle');
-	var dotnetRoot = path.join(bundleRoot, 'dotnet');
-	var dotnetPath = path.join(dotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'dotnet');
-	var sdkPath = path.join(dotnetRoot, 'sdk', '6.0.428');
-	var toolPath = path.join(bundleRoot, 'tools', process.platform === 'win32' ? 'security-scan.exe' : 'security-scan');
-
-	fs.mkdirSync(path.dirname(toolPath), { recursive: true });
-	fs.mkdirSync(sdkPath, { recursive: true });
-	fs.writeFileSync(path.join(packageRoot, 'package.json'), JSON.stringify({
-		name: packageName,
-		version: pkg.cszone38.deepCompanionVersion,
-	}, null, 2));
-	fs.writeFileSync(dotnetPath, '');
-	fs.writeFileSync(toolPath, '');
-	fs.writeFileSync(path.join(bundleRoot, 'manifest.json'), JSON.stringify({
-		schemaVersion: 1,
-		engine: 'security-code-scan',
-		engineVersion: pkg.cszone38.deepCompanionVersion,
-		dotnetRoot: 'dotnet',
-		dotnetPath: process.platform === 'win32' ? 'dotnet/dotnet.exe' : 'dotnet/dotnet',
-		sdkPath: 'dotnet/sdk/6.0.428',
-		securityScanPath: process.platform === 'win32' ? 'tools/security-scan.exe' : 'tools/security-scan',
-	}, null, 2));
-
-	return {
-		root: root,
-		packageName: packageName,
-	};
-}
-
 var fixturesDir = path.join(__dirname, 'fixtures');
 
 section('CLI self scan');
@@ -252,8 +217,6 @@ assert(noSlopProbe.status === 0, 'CLI --no-slop does not initialize WASM');
 
 section('CLI deep and verify guards');
 
-var missingCompanionStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-missing-store-'));
-var missingCompanionResolveRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-missing-resolve-'));
 var omittedOptionalStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-omitted-store-'));
 var deepGuard = runCliWithStatusAndEnv([path.join(fixturesDir, 'clean', 'CleanService.cs'), '--deep'], {
 	CSZONE38_DEEP_STORE_ROOT: omittedOptionalStoreRoot,
@@ -261,71 +224,31 @@ var deepGuard = runCliWithStatusAndEnv([path.join(fixturesDir, 'clean', 'CleanSe
 var deepGuardJson = JSON.parse(runCliWithEnv([path.join(fixturesDir, 'clean', 'CleanService.cs'), '--deep', '--json'], {
 	CSZONE38_DEEP_STORE_ROOT: omittedOptionalStoreRoot,
 }));
-var missingCompanion = runCliWithStatusAndEnv([path.join(fixturesDir, 'clean', 'CleanService.cs'), '--deep'], {
-	CSZONE38_DEEP_STORE_ROOT: missingCompanionStoreRoot,
-	CSZONE38_DEEP_PACKAGE_RESOLVE_FROM: missingCompanionResolveRoot,
-});
 var verifyGuard = runCliWithStatus([path.join(fixturesDir, 'clean', 'CleanService.cs'), '--verify']);
 var deepGuardText = stripAnsi(deepGuard.stdout);
-var missingCompanionText = stripAnsi(missingCompanion.stdout);
 var verifyGuardText = stripAnsi(verifyGuard.stdout);
 
 assert(deepGuard.status === 0, 'CLI --deep without a private deep toolchain exits 0 on a clean fixture');
 assert(deepGuardText.indexOf('--deep unavailable') !== -1,
 	'CLI --deep without a private deep toolchain prints the graceful warning');
-assert(deepGuardText.indexOf('cszone38-deep-') !== -1 && deepGuardText.indexOf('setup deep --bundle=') !== -1,
-	'CLI --deep unavailable warning prioritizes the companion package and keeps the manual fallback');
+assert(deepGuardText.indexOf('GitHub Releases') !== -1 && deepGuardText.indexOf('setup deep --bundle=') !== -1,
+	'CLI --deep unavailable warning points to the release asset and manual bundle setup');
 assert(deepGuardJson.deep && deepGuardJson.deep.warning && deepGuardJson.deep.warning.indexOf('--deep unavailable') !== -1,
 	'CLI --json includes deep warning metadata when the private deep toolchain is unavailable');
-assert(missingCompanion.status === 0 && missingCompanionText.indexOf('--deep unavailable') !== -1,
-	'CLI --deep reports unavailable when the configured companion package search path is empty');
 assert(verifyGuard.status === 0, 'CLI --verify without --allow-network exits 0 on a clean fixture');
 assert(verifyGuardText.indexOf('--verify may contact live providers') !== -1,
 	'CLI --verify prints the startup honeypot warning');
 assert(verifyGuardText.indexOf('--verify requires --allow-network') !== -1,
 	'CLI --verify without --allow-network prints the guard warning');
 
-fs.rmSync(missingCompanionStoreRoot, { recursive: true, force: true });
-fs.rmSync(missingCompanionResolveRoot, { recursive: true, force: true });
 fs.rmSync(omittedOptionalStoreRoot, { recursive: true, force: true });
 
 section('CLI deep setup and doctor');
 
-var autoSeedStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-e2e-auto-seed-store-'));
-var autoSeedPackage = makeDeepCompanionPackageDir();
-var autoSeedRun = runCliWithStatusAndEnv([path.join(fixturesDir, 'clean', 'CleanService.cs'), '--deep'], {
-	CSZONE38_DEEP_STORE_ROOT: autoSeedStoreRoot,
-	CSZONE38_DEEP_PACKAGE_RESOLVE_FROM: autoSeedPackage.root,
-});
-var autoSeedDoctorJson = JSON.parse(runCliWithEnv(['doctor', '--json'], {
-	CSZONE38_DEEP_STORE_ROOT: autoSeedStoreRoot,
-	CSZONE38_DEEP_PACKAGE_RESOLVE_FROM: autoSeedPackage.root,
-}));
-var autoSeedText = stripAnsi(autoSeedRun.stdout);
+var setupWithoutBundle = runCliWithStatus(['setup', 'deep']);
 
-assert(autoSeedRun.status === 0 && autoSeedText.indexOf('--deep unavailable') === -1,
-	'CLI --deep seeds the installed companion package before warning about availability');
-assert(autoSeedText.indexOf('--deep requires a .sln') !== -1,
-	'CLI --deep continues into the normal deep workflow after auto-seeding');
-assert(autoSeedDoctorJson.deep && autoSeedDoctorJson.deep.available === true && autoSeedDoctorJson.deep.installSource === 'package',
-	'CLI doctor reports package-backed deep installs after first deep use');
-assert(autoSeedDoctorJson.deep && autoSeedDoctorJson.deep.packageName === autoSeedPackage.packageName,
-	'CLI doctor reports which companion package seeded the deep toolchain');
-
-var setupFromPackageStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-e2e-setup-package-store-'));
-var setupFromPackage = runCliWithStatusAndEnv(['setup', 'deep'], {
-	CSZONE38_DEEP_STORE_ROOT: setupFromPackageStoreRoot,
-	CSZONE38_DEEP_PACKAGE_RESOLVE_FROM: autoSeedPackage.root,
-});
-var setupFromPackageDoctorJson = JSON.parse(runCliWithEnv(['doctor', '--json'], {
-	CSZONE38_DEEP_STORE_ROOT: setupFromPackageStoreRoot,
-	CSZONE38_DEEP_PACKAGE_RESOLVE_FROM: autoSeedPackage.root,
-}));
-
-assert(setupFromPackage.status === 0 && stripAnsi(setupFromPackage.stdout).indexOf('source                  package') !== -1,
-	'CLI setup deep seeds the installed companion package when no bundle is provided');
-assert(setupFromPackageDoctorJson.deep && setupFromPackageDoctorJson.deep.installSource === 'package',
-	'CLI setup deep without --bundle leaves a package-backed toolchain in the deep store');
+assert(setupWithoutBundle.status === 1 && stripAnsi(setupWithoutBundle.stderr).indexOf('setup deep requires --bundle=PATH') !== -1,
+	'CLI setup deep without --bundle fails with a clear manual bundle requirement');
 
 var deepStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-e2e-deep-store-'));
 var deepBundleRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-e2e-deep-bundle-'));
@@ -368,9 +291,6 @@ assert(doctorJson.deep && doctorJson.deep.installSource === 'bundle',
 
 fs.rmSync(deepStoreRoot, { recursive: true, force: true });
 fs.rmSync(deepBundleRoot, { recursive: true, force: true });
-fs.rmSync(autoSeedStoreRoot, { recursive: true, force: true });
-fs.rmSync(setupFromPackageStoreRoot, { recursive: true, force: true });
-fs.rmSync(autoSeedPackage.root, { recursive: true, force: true });
 
 section('CLI secrets benchmark');
 

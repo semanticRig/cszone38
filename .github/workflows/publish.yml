@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: [self-hosted, linux, x64]
@@ -21,24 +24,17 @@ jobs:
         run: |
           test -n "$CSZONE38_DEEP_BUNDLE_LINUX_X64" || { echo "publish: missing repo var CSZONE38_DEEP_BUNDLE_LINUX_X64"; exit 1; }
           test -d "$CSZONE38_DEEP_BUNDLE_LINUX_X64" || { echo "publish: linux-x64 bundle path is not a directory on the release runner"; exit 1; }
-      - name: Stage publishable packages
+      - name: Pack Linux deep bundle asset
         run: |
-          npm run prepare:deep-release -- \
-            --output-dir=./.release \
-            --bundle-linux-x64="$CSZONE38_DEEP_BUNDLE_LINUX_X64"
-      - name: Publish staged packages
-        run: |
-          node <<'NODE'
-          var childProcess = require('child_process');
-          var fs = require('fs');
-          var path = require('path');
-
-          var manifest = JSON.parse(fs.readFileSync(path.resolve('.release', 'release-manifest.json'), 'utf8'));
-
-          for (var i = 0; i < manifest.publishOrder.length; i++) {
-            var packageDir = path.resolve('.release', 'packages', manifest.publishOrder[i]);
-            childProcess.execFileSync('npm', ['publish', packageDir], { stdio: 'inherit' });
-          }
-          NODE
+          rm -rf ./.release-assets
+          mkdir -p ./.release-assets/cszone38-deep-linux-x64
+          cp -R "$CSZONE38_DEEP_BUNDLE_LINUX_X64"/. ./.release-assets/cszone38-deep-linux-x64/
+          tar -C ./.release-assets -czf ./.release-assets/cszone38-deep-linux-x64.tar.gz cszone38-deep-linux-x64
+      - name: Publish npm package
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Upload Linux deep bundle asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./.release-assets/cszone38-deep-linux-x64.tar.gz
