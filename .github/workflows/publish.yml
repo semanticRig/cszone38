@@ -20,18 +20,12 @@ jobs:
       - name: Verify deep bundle inputs
         run: |
           test -n "$CSZONE38_DEEP_BUNDLE_LINUX_X64" || { echo "publish: missing repo var CSZONE38_DEEP_BUNDLE_LINUX_X64"; exit 1; }
-          test -n "$CSZONE38_DEEP_BUNDLE_DARWIN_X64" || { echo "publish: missing repo var CSZONE38_DEEP_BUNDLE_DARWIN_X64"; exit 1; }
-          test -n "$CSZONE38_DEEP_BUNDLE_WIN32_X64" || { echo "publish: missing repo var CSZONE38_DEEP_BUNDLE_WIN32_X64"; exit 1; }
           test -d "$CSZONE38_DEEP_BUNDLE_LINUX_X64" || { echo "publish: linux-x64 bundle path is not a directory on the release runner"; exit 1; }
-          test -d "$CSZONE38_DEEP_BUNDLE_DARWIN_X64" || { echo "publish: darwin-x64 bundle path is not a directory on the release runner"; exit 1; }
-          test -d "$CSZONE38_DEEP_BUNDLE_WIN32_X64" || { echo "publish: win32-x64 bundle path is not a directory on the release runner"; exit 1; }
       - name: Stage publishable packages
         run: |
           npm run prepare:deep-release -- \
             --output-dir=./.release \
-            --bundle-linux-x64="$CSZONE38_DEEP_BUNDLE_LINUX_X64" \
-            --bundle-darwin-x64="$CSZONE38_DEEP_BUNDLE_DARWIN_X64" \
-            --bundle-win32-x64="$CSZONE38_DEEP_BUNDLE_WIN32_X64"
+            --bundle-linux-x64="$CSZONE38_DEEP_BUNDLE_LINUX_X64"
       - name: Publish staged packages
         run: |
           node <<'NODE'

@@ -197,6 +197,27 @@ npx cszone38 . --threshold=A:40,C:30
 
 **`setup deep`** — Prepares optional local deep-analysis mode.
 
+Current public deep-bundle release support is **Linux x64 only**. macOS and Windows bundles are planned later.
+
+**Windows via WSL2** — If you are on Windows, you can still use `--deep` through WSL2 by running `cszone38` inside a Linux distro such as Ubuntu. This is Linux support inside WSL, not native Windows deep support.
+
+In an elevated PowerShell window:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+After restart, open Ubuntu and run:
+
+```bash
+npm install -g cszone38
+cszone38 doctor
+cszone38 setup deep
+cszone38 . --deep
+```
+
+Run these commands inside WSL, not in native PowerShell or `cmd.exe`. For best performance, keep the repository inside the WSL filesystem rather than under `/mnt/c/...`.
+
 **`--deep`** — Adds an optional deeper local pass. Requires `setup deep` first. Falls back to normal results if unavailable.
 
 **`--solution=PATH`** — Tells deep mode which `.sln`, `.slnx`, or `.csproj` to use when a repo has multiple options.

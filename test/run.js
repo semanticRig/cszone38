@@ -96,14 +96,15 @@ async function main() {
     && pkg.files[3] === 'src/');
   assert('package.json: deep companion contract tracks supported x64 targets', pkg.cszone38
     && pkg.cszone38.deepCompanionPackages
-    && pkg.cszone38.deepCompanionPackages['linux-x64'] === 'cszone38-deep-linux-x64'
-    && pkg.cszone38.deepCompanionPackages['darwin-x64'] === 'cszone38-deep-darwin-x64'
-    && pkg.cszone38.deepCompanionPackages['win32-x64'] === 'cszone38-deep-win32-x64');
+    && Object.keys(pkg.cszone38.deepCompanionPackages).length === 1
+    && pkg.cszone38.deepCompanionPackages['linux-x64'] === 'cszone38-deep-linux-x64');
   assert('package.json: deep companion contract excludes arm64 for now', pkg.cszone38
     && pkg.cszone38.deepCompanionPackages
     && !pkg.cszone38.deepCompanionPackages['linux-arm64']
     && !pkg.cszone38.deepCompanionPackages['darwin-arm64']
-    && !pkg.cszone38.deepCompanionPackages['win32-arm64']);
+    && !pkg.cszone38.deepCompanionPackages['win32-arm64']
+    && !pkg.cszone38.deepCompanionPackages['darwin-x64']
+    && !pkg.cszone38.deepCompanionPackages['win32-x64']);
   assert('package.json: deep companion version follows the main package version', pkg.cszone38
     && pkg.cszone38.deepCompanionVersion === pkg.version);
 
@@ -229,8 +230,8 @@ async function main() {
     publishWorkflowText.indexOf('runs-on: [self-hosted, linux, x64]') !== -1 &&
     publishWorkflowText.indexOf('npm run prepare:deep-release --') !== -1 &&
     publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_LINUX_X64') !== -1 &&
-    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_DARWIN_X64') !== -1 &&
-    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_WIN32_X64') !== -1 &&
+    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_DARWIN_X64') === -1 &&
+    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_WIN32_X64') === -1 &&
     publishWorkflowText.indexOf("release-manifest.json") !== -1 &&
     publishWorkflowText.indexOf("execFileSync('npm', ['publish', packageDir]") !== -1 &&
     publishWorkflowText.indexOf('- run: npm publish') === -1);
@@ -943,15 +944,12 @@ async function main() {
     outputDir: tmpReleaseStageRoot,
     bundlePaths: {
       'linux-x64': tmpBuiltBundleRoot,
-      'darwin-x64': tmpBuiltBundleRoot,
-      'win32-x64': tmpBuiltBundleRoot,
     },
   });
   preparedBrokenRelease = PrepareDeepRelease.stageRelease({
     outputDir: tmpBrokenReleaseStageRoot,
     bundlePaths: {
-      'linux-x64': tmpBuiltBundleRoot,
-      'win32-x64': tmpBuiltBundleRoot,
+      'linux-x64': tmpBuiltBundleRoot + '-missing',
     },
   });
   preparedReleaseManifest = JSON.parse(fs.readFileSync(path.join(tmpReleaseStageRoot, 'release-manifest.json'), 'utf8'));
@@ -1183,9 +1181,8 @@ async function main() {
     brokenBundle.reason.indexOf('bundled security-scan validation failed') !== -1);
   assert('prepare-deep-release: stages the main package with companion optional dependencies',
     preparedRelease.ok === true &&
-    preparedMainPackage.optionalDependencies['cszone38-deep-linux-x64'] === pkg.cszone38.deepCompanionVersion &&
-    preparedMainPackage.optionalDependencies['cszone38-deep-darwin-x64'] === pkg.cszone38.deepCompanionVersion &&
-    preparedMainPackage.optionalDependencies['cszone38-deep-win32-x64'] === pkg.cszone38.deepCompanionVersion);
+    Object.keys(preparedMainPackage.optionalDependencies).length === 1 &&
+    preparedMainPackage.optionalDependencies['cszone38-deep-linux-x64'] === pkg.cszone38.deepCompanionVersion);
   assert('prepare-deep-release: stages platform-scoped companion packages with bundle payloads',
     preparedLinuxCompanionPackage.name === 'cszone38-deep-linux-x64' &&
     preparedLinuxCompanionPackage.os[0] === 'linux' &&
@@ -1193,12 +1190,11 @@ async function main() {
     preparedLinuxCompanionHasManifest);
   assert('prepare-deep-release: writes a release manifest with companions published before the main package',
     preparedReleaseManifest.publishOrder[0] === 'cszone38-deep-linux-x64' &&
-    preparedReleaseManifest.publishOrder[1] === 'cszone38-deep-darwin-x64' &&
-    preparedReleaseManifest.publishOrder[2] === 'cszone38-deep-win32-x64' &&
-    preparedReleaseManifest.publishOrder[3] === pkg.name);
+    preparedReleaseManifest.publishOrder[1] === pkg.name &&
+    preparedReleaseManifest.publishOrder.length === 2);
   assert('prepare-deep-release: fails fast when a required platform bundle is missing',
     preparedBrokenRelease.ok === false &&
-    preparedBrokenRelease.reason.indexOf('--bundle-darwin-x64 is required') !== -1);
+    preparedBrokenRelease.reason.indexOf('--bundle-linux-x64 must point to an existing bundle directory') !== -1);
   assert('deep-toolchain: installs a private deep bundle into the user-local store',
     deepToolchainInstall.ok === true && deepToolchainInstall.engine === DeepToolchain.ENGINE);
   assert('deep-toolchain: doctor reports ready once a private bundle is installed',

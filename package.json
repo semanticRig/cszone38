@@ -22,9 +22,7 @@
   ],
   "cszone38": {
     "deepCompanionPackages": {
-      "linux-x64": "cszone38-deep-linux-x64",
-      "darwin-x64": "cszone38-deep-darwin-x64",
-      "win32-x64": "cszone38-deep-win32-x64"
+      "linux-x64": "cszone38-deep-linux-x64"
     },
     "deepCompanionVersion": "0.1.0"
   },
