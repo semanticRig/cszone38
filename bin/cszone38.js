@@ -507,14 +507,13 @@ function buildHelp() {
     '',
     '  Deep analysis',
     '    cszone38 doctor',
-    '    cszone38 setup deep',
-    '    cszone38 setup deep --bundle=/path/to/deep-bundle',
+    '    cszone38 setup deep --bundle=/path/to/cszone38-deep-linux-x64',
     '    cszone38 . --deep',
     '',
     '  Usage',
     '    cszone38 <path> [options]',
     '    cszone38 doctor [--json]',
-    '    cszone38 setup deep [--bundle=PATH]',
+    '    cszone38 setup deep --bundle=PATH',
     '',
     '  Most used options',
     '    -v, --verbose           Show detailed file breakdown for flagged files',
@@ -541,7 +540,7 @@ function buildHelp() {
     '',
     '  Commands',
     '        doctor              Show base and deep readiness',
-    '        setup deep          Seed the installed companion package or install a private deep bundle',
+    '        setup deep          Install an extracted private deep bundle',
     '',
     '  Info',
     '    -h, --help              Show this help',
@@ -703,7 +702,7 @@ function ensureDeepToolchain() {
   current = DeepToolchain.resolveToolchain();
   if (current.available) return current;
 
-  return DeepToolchain.seedFromCompanionPackage();
+  return null;
 }
 
 function printFixSummary(result) {
@@ -855,9 +854,12 @@ async function main() {
       process.exit(1);
     }
 
-    var setupResult = opts.bundle
-      ? DeepToolchain.installBundle(opts.bundle)
-      : DeepToolchain.seedFromCompanionPackage();
+    if (!opts.bundle) {
+      process.stderr.write('cszone38: setup deep requires --bundle=PATH\n');
+      process.exit(1);
+    }
+
+    var setupResult = DeepToolchain.installBundle(opts.bundle);
     if (!setupResult.ok) {
       process.stderr.write('cszone38: setup deep failed: ' + setupResult.reason + '\n');
       process.exit(1);

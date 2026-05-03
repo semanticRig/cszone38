@@ -86,27 +86,16 @@ async function main() {
   assert('package.json: main is src/index.js',   pkg.main === 'src/index.js');
   assert('package.json: bin entry exists',       pkg.bin && pkg.bin['cszone38'] === 'bin/cszone38.js');
   assert('package.json: engines node >= 18',     pkg.engines && pkg.engines.node === '>=18.0.0');
-  assert('package.json: deep release staging script exists', pkg.scripts
-    && pkg.scripts['prepare:deep-release'] === 'node scripts/prepare-deep-release.js');
+  assert('package.json: deep bundle build script exists', pkg.scripts
+    && pkg.scripts['build:deep-bundle'] === 'node scripts/build-deep-bundle.js');
   assert('package.json: files allowlist locks the public tarball', Array.isArray(pkg.files)
     && pkg.files.length === 4
     && pkg.files[0] === 'bin/'
     && pkg.files[1] === 'corpus/'
     && pkg.files[2] === 'scripts/build-deep-bundle.js'
     && pkg.files[3] === 'src/');
-  assert('package.json: deep companion contract tracks supported x64 targets', pkg.cszone38
-    && pkg.cszone38.deepCompanionPackages
-    && Object.keys(pkg.cszone38.deepCompanionPackages).length === 1
-    && pkg.cszone38.deepCompanionPackages['linux-x64'] === 'cszone38-deep-linux-x64');
-  assert('package.json: deep companion contract excludes arm64 for now', pkg.cszone38
-    && pkg.cszone38.deepCompanionPackages
-    && !pkg.cszone38.deepCompanionPackages['linux-arm64']
-    && !pkg.cszone38.deepCompanionPackages['darwin-arm64']
-    && !pkg.cszone38.deepCompanionPackages['win32-arm64']
-    && !pkg.cszone38.deepCompanionPackages['darwin-x64']
-    && !pkg.cszone38.deepCompanionPackages['win32-x64']);
-  assert('package.json: deep companion version follows the main package version', pkg.cszone38
-    && pkg.cszone38.deepCompanionVersion === pkg.version);
+  assert('package.json: release package does not advertise npm deep companions',
+    !pkg.cszone38 && !pkg.scripts['prepare:deep-release']);
 
   // src/index.js exports the right shape
   var api = require('../src/index.js');
@@ -228,13 +217,12 @@ async function main() {
     fs.existsSync(path.join(__dirname, '..', 'bin', 'cszone38.js')));
   assert('publish workflow: stages deep release packages before publishing',
     publishWorkflowText.indexOf('runs-on: [self-hosted, linux, x64]') !== -1 &&
-    publishWorkflowText.indexOf('npm run prepare:deep-release --') !== -1 &&
     publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_LINUX_X64') !== -1 &&
-    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_DARWIN_X64') === -1 &&
-    publishWorkflowText.indexOf('CSZONE38_DEEP_BUNDLE_WIN32_X64') === -1 &&
-    publishWorkflowText.indexOf("release-manifest.json") !== -1 &&
-    publishWorkflowText.indexOf("execFileSync('npm', ['publish', packageDir]") !== -1 &&
-    publishWorkflowText.indexOf('- run: npm publish') === -1);
+    publishWorkflowText.indexOf('npm run prepare:deep-release --') === -1 &&
+    publishWorkflowText.indexOf('release-manifest.json') === -1 &&
+    publishWorkflowText.indexOf('softprops/action-gh-release@v2') !== -1 &&
+    publishWorkflowText.indexOf('cszone38-deep-linux-x64.tar.gz') !== -1 &&
+    publishWorkflowText.indexOf('- name: Publish npm package') !== -1);
 
   // -------------------------------------------------------------------------
   // Phase 2 — WASM parser singleton
@@ -818,31 +806,19 @@ async function main() {
   var renderedJson = api.renderJson(reportResult.report);
   var parsedJson = JSON.parse(renderedJson);
   var BuildDeepBundle = require('../scripts/build-deep-bundle.js');
-  var PrepareDeepRelease = require('../scripts/prepare-deep-release.js');
   var DeepToolchain = require('../src/deep-toolchain-cs');
   var Verify = require('../src/verify-cs');
   var tmpRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-since-'));
   var tmpDeepStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-store-'));
-  var tmpDeepPackageProjectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-package-project-'));
-  var tmpDeepPackageStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-package-store-'));
-  var tmpDeepMissingPackageStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-package-missing-store-'));
+  var tmpDeepMissingStoreRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-missing-store-'));
   var tmpDeepBundleRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-bundle-'));
   var tmpBundleSourceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-deep-source-'));
   var tmpBuiltBundleRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-built-bundle-'));
   var tmpBrokenBundleRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-broken-bundle-'));
-  var tmpReleaseStageRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-release-stage-'));
-  var tmpBrokenReleaseStageRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cszone38-release-stage-broken-'));
   var previousCwd = process.cwd();
   var sinceFixtures;
   var invalidSinceFixtures;
   var deepBundleManifestPath = path.join(tmpDeepBundleRoot, 'manifest.json');
-  var deepCompanionPackageName = pkg.cszone38.deepCompanionPackages[process.platform + '-' + process.arch] || null;
-  var deepCompanionPackageRoot = deepCompanionPackageName ? path.join(tmpDeepPackageProjectRoot, 'node_modules', deepCompanionPackageName) : null;
-  var deepCompanionBundleRoot = deepCompanionPackageRoot ? path.join(deepCompanionPackageRoot, 'bundle') : null;
-  var deepCompanionDotnetRoot = deepCompanionBundleRoot ? path.join(deepCompanionBundleRoot, 'dotnet') : null;
-  var deepCompanionDotnetPath = deepCompanionDotnetRoot ? path.join(deepCompanionDotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'dotnet') : null;
-  var deepCompanionSdkPath = deepCompanionDotnetRoot ? path.join(deepCompanionDotnetRoot, 'sdk', '6.0.428') : null;
-  var deepCompanionToolPath = deepCompanionBundleRoot ? path.join(deepCompanionBundleRoot, 'tools', process.platform === 'win32' ? 'security-scan.exe' : 'security-scan') : null;
   var deepDotnetRoot = path.join(tmpDeepBundleRoot, 'dotnet');
   var deepDotnetPath = path.join(deepDotnetRoot, process.platform === 'win32' ? 'dotnet.exe' : 'dotnet');
   var deepSdkPath = path.join(deepDotnetRoot, 'sdk', '8.0.100');
@@ -854,18 +830,10 @@ async function main() {
   var bundleSourceToolPath = path.join(bundleSourceToolDir, process.platform === 'win32' ? 'security-scan.exe' : 'security-scan');
   var deepToolchainInstall;
   var deepToolchainDoctor;
-  var deepToolchainPackageSeed;
-  var deepToolchainPackageDoctor;
-  var deepToolchainMissingPackage;
+  var deepToolchainUnavailable;
   var builtBundle;
   var brokenBundle;
   var builtBundleManifest;
-  var preparedRelease;
-  var preparedReleaseManifest;
-  var preparedMainPackage;
-  var preparedLinuxCompanionPackage;
-  var preparedLinuxCompanionHasManifest;
-  var preparedBrokenRelease;
   var deepNoSolution;
   var deepSlnxPath;
   var deepMissingFlag = Deep.runDeepScan(path.join(__dirname, 'fixtures', 'clean'), {
@@ -940,41 +908,6 @@ async function main() {
     },
   });
   builtBundleManifest = JSON.parse(fs.readFileSync(path.join(tmpBuiltBundleRoot, 'manifest.json'), 'utf8'));
-  preparedRelease = PrepareDeepRelease.stageRelease({
-    outputDir: tmpReleaseStageRoot,
-    bundlePaths: {
-      'linux-x64': tmpBuiltBundleRoot,
-    },
-  });
-  preparedBrokenRelease = PrepareDeepRelease.stageRelease({
-    outputDir: tmpBrokenReleaseStageRoot,
-    bundlePaths: {
-      'linux-x64': tmpBuiltBundleRoot + '-missing',
-    },
-  });
-  preparedReleaseManifest = JSON.parse(fs.readFileSync(path.join(tmpReleaseStageRoot, 'release-manifest.json'), 'utf8'));
-  preparedMainPackage = JSON.parse(fs.readFileSync(path.join(preparedRelease.mainPackageDir, 'package.json'), 'utf8'));
-  preparedLinuxCompanionPackage = JSON.parse(fs.readFileSync(path.join(preparedRelease.companionPackageDirs['linux-x64'], 'package.json'), 'utf8'));
-  preparedLinuxCompanionHasManifest = fs.existsSync(path.join(preparedRelease.companionPackageDirs['linux-x64'], 'bundle', 'manifest.json'));
-  if (deepCompanionPackageRoot) {
-    fs.mkdirSync(deepCompanionSdkPath, { recursive: true });
-    fs.mkdirSync(path.dirname(deepCompanionToolPath), { recursive: true });
-    fs.writeFileSync(path.join(deepCompanionPackageRoot, 'package.json'), JSON.stringify({
-      name: deepCompanionPackageName,
-      version: pkg.cszone38.deepCompanionVersion,
-    }, null, 2));
-    fs.writeFileSync(deepCompanionDotnetPath, '');
-    fs.writeFileSync(deepCompanionToolPath, '');
-    fs.writeFileSync(path.join(deepCompanionBundleRoot, 'manifest.json'), JSON.stringify({
-      schemaVersion: DeepToolchain.SCHEMA_VERSION,
-      engine: DeepToolchain.ENGINE,
-      engineVersion: pkg.cszone38.deepCompanionVersion,
-      dotnetRoot: 'dotnet',
-      dotnetPath: process.platform === 'win32' ? 'dotnet/dotnet.exe' : 'dotnet/dotnet',
-      sdkPath: 'dotnet/sdk/6.0.428',
-      securityScanPath: process.platform === 'win32' ? 'tools/security-scan.exe' : 'tools/security-scan',
-    }, null, 2));
-  }
   fs.mkdirSync(path.dirname(deepToolPath), { recursive: true });
   fs.mkdirSync(deepSdkPath, { recursive: true });
   fs.writeFileSync(deepDotnetPath, '');
@@ -990,15 +923,7 @@ async function main() {
   }, null, 2));
   deepToolchainInstall = DeepToolchain.installBundle(tmpDeepBundleRoot, { storeRoot: tmpDeepStoreRoot });
   deepToolchainDoctor = DeepToolchain.doctor({ storeRoot: tmpDeepStoreRoot });
-  deepToolchainPackageSeed = DeepToolchain.seedFromCompanionPackage({
-    storeRoot: tmpDeepPackageStoreRoot,
-    resolveFrom: tmpDeepPackageProjectRoot,
-  });
-  deepToolchainPackageDoctor = DeepToolchain.doctor({ storeRoot: tmpDeepPackageStoreRoot });
-  deepToolchainMissingPackage = DeepToolchain.seedFromCompanionPackage({
-    storeRoot: tmpDeepMissingPackageStoreRoot,
-    resolveFrom: tmpRepoRoot,
-  });
+  deepToolchainUnavailable = DeepToolchain.resolveToolchain({ storeRoot: tmpDeepMissingStoreRoot });
   deepNoSolution = Deep.runDeepScan(tmpRepoRoot, {
     deep: true,
     deepManifestPath: deepToolchainInstall.manifestPath,
@@ -1114,15 +1039,11 @@ async function main() {
     process.chdir(previousCwd);
     fs.rmSync(tmpRepoRoot, { recursive: true, force: true });
     fs.rmSync(tmpDeepStoreRoot, { recursive: true, force: true });
-    fs.rmSync(tmpDeepPackageProjectRoot, { recursive: true, force: true });
-    fs.rmSync(tmpDeepPackageStoreRoot, { recursive: true, force: true });
-    fs.rmSync(tmpDeepMissingPackageStoreRoot, { recursive: true, force: true });
+    fs.rmSync(tmpDeepMissingStoreRoot, { recursive: true, force: true });
     fs.rmSync(tmpDeepBundleRoot, { recursive: true, force: true });
     fs.rmSync(tmpBundleSourceRoot, { recursive: true, force: true });
     fs.rmSync(tmpBuiltBundleRoot, { recursive: true, force: true });
     fs.rmSync(tmpBrokenBundleRoot, { recursive: true, force: true });
-    fs.rmSync(tmpReleaseStageRoot, { recursive: true, force: true });
-    fs.rmSync(tmpBrokenReleaseStageRoot, { recursive: true, force: true });
   }
 
   deepIntegratedResult = api.run(path.join(__dirname, 'fixtures', 'clean', 'CleanService.cs'), {
@@ -1179,38 +1100,14 @@ async function main() {
   assert('build-deep-bundle: fails fast when bundled security-scan cannot scan with the bundled sdk path',
     brokenBundle.ok === false &&
     brokenBundle.reason.indexOf('bundled security-scan validation failed') !== -1);
-  assert('prepare-deep-release: stages the main package with companion optional dependencies',
-    preparedRelease.ok === true &&
-    Object.keys(preparedMainPackage.optionalDependencies).length === 1 &&
-    preparedMainPackage.optionalDependencies['cszone38-deep-linux-x64'] === pkg.cszone38.deepCompanionVersion);
-  assert('prepare-deep-release: stages platform-scoped companion packages with bundle payloads',
-    preparedLinuxCompanionPackage.name === 'cszone38-deep-linux-x64' &&
-    preparedLinuxCompanionPackage.os[0] === 'linux' &&
-    preparedLinuxCompanionPackage.cpu[0] === 'x64' &&
-    preparedLinuxCompanionHasManifest);
-  assert('prepare-deep-release: writes a release manifest with companions published before the main package',
-    preparedReleaseManifest.publishOrder[0] === 'cszone38-deep-linux-x64' &&
-    preparedReleaseManifest.publishOrder[1] === pkg.name &&
-    preparedReleaseManifest.publishOrder.length === 2);
-  assert('prepare-deep-release: fails fast when a required platform bundle is missing',
-    preparedBrokenRelease.ok === false &&
-    preparedBrokenRelease.reason.indexOf('--bundle-linux-x64 must point to an existing bundle directory') !== -1);
   assert('deep-toolchain: installs a private deep bundle into the user-local store',
     deepToolchainInstall.ok === true && deepToolchainInstall.engine === DeepToolchain.ENGINE);
   assert('deep-toolchain: doctor reports ready once a private bundle is installed',
     deepToolchainDoctor.deep.available === true && deepToolchainDoctor.deep.engine === DeepToolchain.ENGINE);
-  assert('deep-toolchain: seeds an installed companion package into the user-local store',
-    deepToolchainPackageSeed.ok === true &&
-    deepToolchainPackageSeed.installSource === 'package' &&
-    deepToolchainPackageSeed.packageName === deepCompanionPackageName);
-  assert('deep-toolchain: doctor reports package-backed installs with source metadata',
-    deepToolchainPackageDoctor.deep.available === true &&
-    deepToolchainPackageDoctor.deep.installSource === 'package' &&
-    deepToolchainPackageDoctor.deep.packageName === deepCompanionPackageName);
-  assert('deep-toolchain: missing companion package reports a clear fallback reason',
-    deepToolchainMissingPackage.ok === false &&
-    deepToolchainMissingPackage.reason.indexOf('not installed') !== -1 &&
-    deepToolchainMissingPackage.reason.indexOf(DeepToolchain.SETUP_HINT) !== -1);
+  assert('deep-toolchain: missing bundle reports a clear manual setup hint',
+    deepToolchainUnavailable.available === false &&
+    deepToolchainUnavailable.reason.indexOf('GitHub Releases') !== -1 &&
+    deepToolchainUnavailable.reason.indexOf('setup deep --bundle=') !== -1);
   assert('deep-cs: missing toolchain warns and returns no findings',
     deepMissingFlag.warning === Deep.DEEP_UNAVAILABLE_WARNING && deepMissingFlag.findings.length === 0);
   assert('deep-cs: missing solution warns gracefully',
