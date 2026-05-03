@@ -1,0 +1,10 @@
+id: empty-catch-block
+language: CSharp
+name: Empty catch block
+category: error-silencing
+severity: 6
+description: Empty catch blocks silently swallow exceptions.
+message: Empty catch block
+fix: Handle the exception explicitly or log it before rethrowing.
+kind: catch_clause
+emptyBlock: true

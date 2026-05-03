@@ -1,0 +1,11 @@
+id: throw-not-implemented
+language: CSharp
+name: Throwing NotImplementedException
+category: dead-code
+severity: 5
+description: NotImplementedException in concrete code paths is unfinished behavior.
+message: Throwing NotImplementedException
+fix: Implement the behavior or replace it with a supported exception path.
+patterns:
+  - throw new NotImplementedException($$$ARGS);
+  - throw new System.NotImplementedException($$$ARGS);

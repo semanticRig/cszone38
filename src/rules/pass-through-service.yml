@@ -1,0 +1,10 @@
+id: pass-through-service
+language: CSharp
+name: Pass-through service method
+category: over-engineering
+severity: 6
+description: Methods that only delegate to an inner dependency add no value.
+message: Pass-through service method
+fix: Inline the delegation or add meaningful behavior around the dependency call.
+kind: method_declaration
+delegateOnly: true

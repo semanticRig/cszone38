@@ -1,0 +1,158 @@
+<svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" width="800" height="320">
+  <defs>
+    <!-- Dark background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
+    </linearGradient>
+
+    <!-- C# purple-to-blue gradient -->
+    <linearGradient id="csharpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+
+    <!-- Accent glow gradient -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0"/>
+    </linearGradient>
+
+    <!-- Text gradient -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e2e8f0"/>
+      <stop offset="100%" style="stop-color:#94a3b8"/>
+    </linearGradient>
+
+    <!-- IC number gradient -->
+    <linearGradient id="numGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#60a5fa"/>
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Outer glow filter for the hash symbol -->
+    <filter id="hashGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.2" opacity="0.06"/>
+    </pattern>
+
+    <!-- Clip for rounded rect -->
+    <clipPath id="roundClip">
+      <rect width="800" height="320" rx="16"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="320" rx="16" fill="url(#bgGrad)"/>
+  <rect width="800" height="320" rx="16" fill="url(#grid)" clip-path="url(#roundClip)"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="4" height="320" rx="2" fill="url(#csharpGrad)"/>
+
+  <!-- Subtle bottom glow line -->
+  <rect x="80" y="306" width="640" height="1.5" rx="1" fill="url(#accentGrad)" opacity="0.6"/>
+
+  <!-- ═══ C# SYMBOL BLOCK ═══ -->
+  <!-- Outer hexagonal frame suggestion — just a bold rounded square -->
+  <rect x="44" y="44" width="200" height="200" rx="24" fill="#12121e" stroke="url(#csharpGrad)" stroke-width="1.5" opacity="0.9"/>
+
+  <!-- Inner hex glow -->
+  <rect x="44" y="44" width="200" height="200" rx="24" fill="none" stroke="#6366f1" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- C letter — bold, sharp, custom drawn -->
+  <!-- Main C arc as thick stroke path -->
+  <path d="M 165 88 
+           A 62 62 0 1 0 165 200" 
+        fill="none" 
+        stroke="url(#csharpGrad)" 
+        stroke-width="22" 
+        stroke-linecap="round"
+        filter="url(#hashGlow)"/>
+
+  <!-- Hash # symbol — right side of the C, precise construction -->
+  <!-- Horizontal bars -->
+  <line x1="174" y1="124" x2="216" y2="124" stroke="url(#csharpGrad)" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/>
+  <line x1="174" y1="152" x2="216" y2="152" stroke="url(#csharpGrad)" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/>
+  <!-- Vertical bars (slightly angled for style) -->
+  <line x1="184" y1="112" x2="181" y2="166" stroke="url(#csharpGrad)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+  <line x1="205" y1="112" x2="202" y2="166" stroke="url(#csharpGrad)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+
+  <!-- IC hint dot — the "0.038" detail encoded as a tiny indicator -->
+  <circle cx="144" cy="244" r="3" fill="#6366f1" opacity="0.8"/>
+  <text x="154" y="248" font-family="'Courier New', monospace" font-size="10" fill="#4b5563" letter-spacing="0.5">IC=0.038</text>
+
+  <!-- ═══ WORDMARK ═══ -->
+  <!-- Main logotype -->
+  <text x="280" y="148" 
+        font-family="'Courier New', 'Consolas', monospace" 
+        font-size="72" 
+        font-weight="700"
+        letter-spacing="-2"
+        fill="url(#textGrad)"
+        filter="url(#glow)">cs</text>
+
+  <text x="378" y="148" 
+        font-family="'Courier New', 'Consolas', monospace" 
+        font-size="72" 
+        font-weight="700"
+        letter-spacing="-2"
+        fill="url(#numGrad)"
+        filter="url(#glow)">zone</text>
+
+  <!-- The number 38 — slightly larger, accent color -->
+  <text x="610" y="148" 
+        font-family="'Courier New', 'Consolas', monospace" 
+        font-size="72" 
+        font-weight="700"
+        fill="url(#csharpGrad)"
+        filter="url(#hashGlow)">38</text>
+
+  <!-- Horizontal rule under wordmark -->
+  <line x1="280" y1="162" x2="726" y2="162" stroke="url(#accentGrad)" stroke-width="1" opacity="0.5"/>
+
+  <!-- Tagline -->
+  <text x="280" y="188" 
+        font-family="'Courier New', 'Consolas', monospace" 
+        font-size="14" 
+        fill="#64748b"
+        letter-spacing="3">STATIC ANALYSIS FOR C# CODEBASES</text>
+
+  <!-- Three axis badges -->
+  <!-- Axis A -->
+  <rect x="280" y="212" width="52" height="22" rx="4" fill="#1e1b3a" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="306" y="227" font-family="'Courier New', monospace" font-size="11" fill="#a78bfa" text-anchor="middle" font-weight="bold">A·SLOP</text>
+
+  <!-- Axis B -->
+  <rect x="340" y="212" width="68" height="22" rx="4" fill="#1a1f3a" stroke="#6366f1" stroke-width="1"/>
+  <text x="374" y="227" font-family="'Courier New', monospace" font-size="11" fill="#818cf8" text-anchor="middle" font-weight="bold">B·SECURITY</text>
+
+  <!-- Axis C -->
+  <rect x="416" y="212" width="72" height="22" rx="4" fill="#1a2535" stroke="#3b82f6" stroke-width="1"/>
+  <text x="452" y="227" font-family="'Courier New', monospace" font-size="11" fill="#60a5fa" text-anchor="middle" font-weight="bold">C·QUALITY</text>
+
+  <!-- Tiny "offline / zero-dep" badge far right -->
+  <rect x="638" y="212" width="88" height="22" rx="4" fill="#0f1a0f" stroke="#22c55e" stroke-width="1" opacity="0.8"/>
+  <text x="682" y="227" font-family="'Courier New', monospace" font-size="10" fill="#4ade80" text-anchor="middle">● OFFLINE</text>
+
+  <!-- Corner mark — subtle version tag -->
+  <text x="744" y="314" font-family="'Courier New', monospace" font-size="9" fill="#1e293b" text-anchor="end">v0.1.0</text>
+</svg>

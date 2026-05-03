@@ -1,0 +1,17 @@
+node_modules/
+*.gz.tmp
+.DS_Store
+*.log
+npm-debug.log*
+
+# Release artifacts
+.release/
+dist/
+
+# Internal workflow and planning material
+CLAUDE.md
+approved-v1-improvement/
+subagent-wiki/
+bugs/
+.github/agents/
+.github/instructions/

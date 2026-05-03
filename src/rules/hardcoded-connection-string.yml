@@ -1,0 +1,11 @@
+id: hardcoded-connection-string
+language: CSharp
+name: Hardcoded connection string
+category: security-shape
+severity: 8
+description: Connection strings should come from configuration, not literals.
+message: Hardcoded connection string
+fix: Move the connection string to configuration or secrets storage.
+kind: variable_declarator
+textRegex: ConnectionString\s*=\s*@?"(?:Server=|Data Source=)
+textRegexFlags: i

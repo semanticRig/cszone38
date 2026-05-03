@@ -1,0 +1,11 @@
+id: factory-builder-inflation
+language: CSharp
+name: Factory or builder inflation
+category: over-engineering
+severity: 5
+description: Tiny factory and builder classes are often needless ceremony.
+message: Factory or builder inflation
+fix: Replace the tiny factory or builder with a plain constructor or function.
+kind: class_declaration
+identifierRegex: (?:Factory|Builder)$
+maxClassMemberCount: 2

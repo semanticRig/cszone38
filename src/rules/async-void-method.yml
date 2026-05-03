@@ -1,0 +1,11 @@
+id: async-void-method
+language: CSharp
+name: Async void method
+category: async-abuse
+severity: 7
+description: Async void should be reserved for event handlers only.
+message: Async void method
+fix: Return Task instead of async void unless this is a real event handler.
+kind: method_declaration
+requiredChildTexts: async|void
+identifierNotRegex: (?:_Click|_Changed|Handler)$

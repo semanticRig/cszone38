@@ -1,0 +1,11 @@
+id: string-format-sql
+language: CSharp
+name: Interpolated SQL string
+category: security-shape
+severity: 8
+description: Interpolated SQL often indicates SQL injection risk.
+message: Interpolated SQL string
+fix: Use parameterized SQL or an ORM API instead of interpolating SQL text.
+kind: interpolated_string_expression
+textRegex: ^(?:\$@|@\$|\$)"\s*(SELECT|UPDATE|DELETE|INSERT)\b
+textRegexFlags: i

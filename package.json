@@ -1,0 +1,41 @@
+{
+  "name": "cszone38",
+  "version": "0.1.0",
+  "description": "Static analysis CLI for C# codebases. Detects AI-generated code, hardcoded secrets, and quality issues.",
+  "main": "src/index.js",
+  "bin": {
+    "cszone38": "bin/cszone38.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node test/run.js",
+    "build:deep-bundle": "node scripts/build-deep-bundle.js",
+    "prepare:deep-release": "node scripts/prepare-deep-release.js"
+  },
+  "files": [
+    "bin/",
+    "corpus/",
+    "scripts/build-deep-bundle.js",
+    "src/"
+  ],
+  "cszone38": {
+    "deepCompanionPackages": {
+      "linux-x64": "cszone38-deep-linux-x64",
+      "darwin-x64": "cszone38-deep-darwin-x64",
+      "win32-x64": "cszone38-deep-win32-x64"
+    },
+    "deepCompanionVersion": "0.1.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "BUSL-1.1",
+  "type": "commonjs",
+  "dependencies": {
+    "@ast-grep/napi": "^0.25.7",
+    "tree-sitter-c-sharp": "^0.23.5",
+    "web-tree-sitter": "^0.26.8",
+    "zone38": "^0.0.1"
+  }
+}

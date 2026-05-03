@@ -1,0 +1,16 @@
+id: empty-interface-body
+language: CSharp
+name: Empty interface body
+category: dead-code
+severity: 4
+description: Marker interfaces are often unnecessary abstraction.
+message: Empty interface body
+fix: Remove the empty interface or replace it with explicit behavior.
+capture: NAME
+captureRegex: ^I[A-Za-z0-9_]*$
+patterns:
+  - public interface $NAME { }
+  - internal interface $NAME { }
+  - private interface $NAME { }
+  - protected interface $NAME { }
+  - interface $NAME { }
